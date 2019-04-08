@@ -1,11 +1,12 @@
 #define SYNC_UP 0xc3
 #define SYNC_LO 0xaa
 
+
 //Initialize a data structure for incoming messages.
 struct{
   uint8_t sync1;
   uint8_t sync2;
-  uint8_t type, size;
+  uint8_t type, len;
   uint8_t pld[BUFFER_SIZE-8];
   union{
     uint32_t u32;
@@ -68,7 +69,7 @@ void processRX(){
     msg.sync1 = buffer.pop();
     if (msg.sync1 == SYNC_UP){
       msg.sync2 = buffer.pop();
-      if (b2 == SYNC_LO){
+      if (msg.sync2 == SYNC_LO){
         msg.valid_sync = true;
       }
     }
@@ -78,15 +79,15 @@ void processRX(){
   //of the case of an incomplete message.
   if(msg.valid_sync && (buffer.size()>=6)){
     msg.type = buffer.pop();
-    msg.size = buffer.pop();
+    msg.len = buffer.pop();
     msg.crc_rx.u8arr[0] = buffer.pop();
     msg.crc_rx.u8arr[1] = buffer.pop();
     msg.crc_rx.u8arr[2] = buffer.pop();
     msg.crc_rx.u8arr[3] = buffer.pop();
 
-    if(buffer.size()>=msg.size){
-      for(int ct=0, ct<=msg.size, ct++){
-        msg.pld[ct] = buffer.pop
+    if(buffer.size() >= msg.len){
+      for(int ct=0; ct <= msg.len; ct++){
+        msg.pld[ct] = buffer.pop();
       }
     }
     else{
@@ -104,14 +105,14 @@ void processRX(){
 
   //We've read in the message. Now validate the CRC.
   if(msg.valid_sync && msg.valid_length){
-    msg.crc_calc = CRC::calculate(msg.pld, msg.size)
+    msg.crc_calc = crc.calculate(msg.pld, msg.len);
     if(msg.crc_calc == msg.crc_rx.u32){
       msg.valid_crc == true;
     }
     else{
       Serial.println("CRC mismatch");
       active.print("ERR CRC mismatch >");
-      active.println(hexString(msg.pld));
+      active.println(hexString(msg.pld, msg.len));
       active.flush();
     }
   }
@@ -120,15 +121,16 @@ void processRX(){
   //process the thing.
   switch(msg.type){
     case 0x00: //Log data
-
+      active.println(hexString(msg.pld, msg.len));
+      active.flush();
+      break;
     case 0x01: //Create new file (safely)
-
+      break;
     case 0x02: //Append to existing file
-
-    case 0x03: //
-
+      break;
+    default: 
+      break;
   }
-
 
 
 }
