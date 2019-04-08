@@ -24,6 +24,9 @@ struct{
  */
 void receive(int countBytes){
   uint8_t in = 0;
+  
+  Serial.println("Message Incoming");
+  
   if ((countBytes+buffer.size()) > BUFFER_SIZE){
     Serial.println("Incoming exceeds buffer");
     active.println("ERR Incoming exceeds buffer");
@@ -59,6 +62,7 @@ void request(){
  * determines the appropriate action based on the message type.
  */
 void processRX(){
+  Serial.println("Message processing");
   //Reinitialize values
   msg.valid_sync = false;
   msg.valid_length = true;
@@ -67,6 +71,7 @@ void processRX(){
   //Read bytes until valid message sync bytes are detected.
   while(!buffer.isEmpty()){
     msg.sync1 = buffer.pop();
+    Serial.println(String(msg.sync1));
     if (msg.sync1 == SYNC_UP){
       msg.sync2 = buffer.pop();
       if (msg.sync2 == SYNC_LO){
