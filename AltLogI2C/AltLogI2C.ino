@@ -15,15 +15,16 @@
 #define SPI_MOSI
 
 //Initialize the circular buffer of chars for I2C data, and the CRC32 generator
-#define BUFFER_SIZE 128 //TODO: Test if this is too big
-CircularBuffer<uint8_t, BUFFER_SIZE> buffer;
+#define BUFFER_SIZE 64
+//CircularBuffer<uint8_t, BUFFER_SIZE> buffer;
 CRC32 crc;
 
 //Define File variable
 File active;
 
 //Define special flags.
-#define DEBUG 0
+//#define DEBUG
+#define VERBOSE
 
 //Useful varaibles
 unsigned long oldtime_100Hz,oldtime_10Hz,oldtime_1Hz = 0;
@@ -40,16 +41,16 @@ void setup() {
 
   //Setup serial port for debug messages.
   //If debug mode specified, wait for the monitor to open.
-  Serial.begin(9600);
-  if(DEBUG){
-    while(!Serial);
-  }
+  Serial.begin(115200);
+  #ifdef DEBUG
+  while(!Serial);
+  #endif
 
   //Initialize the SD card
   if(!SD.begin(SPI_CS)){
     Serial.println("Card initialize failed");
     while(true);
-    
+
   }
   //Open a default file, create that file if it does not exist.
   active = SD.open("default.txt");
@@ -57,7 +58,7 @@ void setup() {
   //Initialize the LED pin
 
   pinMode(led_pwr, OUTPUT);
-  
+
 }
 
 void loop() {
@@ -68,16 +69,14 @@ void loop() {
    * onRequest handles all the data requests, as it assumes that they will be
    * proceeded by a sent message.
    */
-  if (!buffer.isEmpty()){
-    processRX();
-  }
+  processRX();
 
   /*
    * Heartbeat code to run periodic stuff.
    */
   newtime = millis();
   if(newtime-oldtime_1Hz >= 1000){ //1Hz Tasks
-    
+
     oldtime_1Hz = newtime;
     Serial.println("Heartbeat: LED State: "+String(ledState));
 
@@ -89,5 +88,5 @@ void loop() {
     digitalWrite(led_pwr, ledState);
   }
 
-  
+
 }

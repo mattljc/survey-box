@@ -8,7 +8,7 @@
 #define Serial SerialUSB
 #define TARGET 0x42
 
-String msg,pld;
+byte msg[] = {0x5A, 0xA5, 0xFF, 0x00, 0xAA, 0xFF, 0x00, 0xAA};
 CRC32 crc;
 
 //Timers
@@ -27,10 +27,11 @@ void loop() {
     
     oldtime = newtime;
     Serial.println("Send message");
-    msg = "MESSAGE";
 
     Wire.beginTransmission(TARGET);
-    Wire.write('A');
+    Wire.write(0xC3);
+    Wire.write(0xAA);
+    Wire.write(msg, 8);
     Wire.endTransmission();
     
   }
