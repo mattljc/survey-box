@@ -8,11 +8,11 @@ struct{
   uint8_t sync2;
   uint8_t type;
   uint8_t len;
-  uint8_t pld[BUFFER_SIZE];
   union{
     uint32_t u32;
     uint8_t u8[4];
   }crc_rx;
+  uint8_t pld[BUFFER_SIZE];
   uint32_t crc_calc;
   bool valid_sync;
   bool valid_length;
@@ -26,23 +26,22 @@ struct{
  * found, start populating the msg structure.
  */
 void receive(int countBytes){
-
   //Reset msg flags.
   msg.valid_sync = false;
   msg.valid_length = false;
   msg.valid_crc = false;
 
   #ifdef VERBOSE
-  Serial.println("Message Incoming");
+  Serial.println(F("Message Incoming"));
   Serial.println("Size: "+String(countBytes));
   #endif
 
   //Check size won't overflow buffer
   if(countBytes > BUFFER_SIZE+8){
     #ifdef VERBOSE
-    Serial.println("Incoming exceeds buffer");
+    Serial.println(F("Incoming exceeds buffer"));
     #endif
-    active.println("ERR Incoming exceeds buffer");
+    active.println(F("ERR Incoming exceeds buffer"));
     active.flush();
     //What to do if buffer is full?
   }
@@ -52,7 +51,7 @@ void receive(int countBytes){
       msg.sync1 = Wire.read();
 
       #ifdef VERBOSE
-      Serial.println("~"+String(msg.sync1,HEX)+"~");
+      Serial.println("~"+String(msg.sync1,HEX));
       #endif
 
       if(msg.sync1 == SYNC_UP){
@@ -60,7 +59,7 @@ void receive(int countBytes){
          msg.sync2 = Wire.read();
 
          #ifdef VERBOSE
-         Serial.println("~~"+String(msg.sync2,HEX)+"~~");
+         Serial.println("~~"+String(msg.sync2,HEX));
          #endif
 
          if(msg.sync2 == SYNC_LO){
@@ -74,7 +73,7 @@ void receive(int countBytes){
              msg.crc_rx.u8[3]= Wire.read();
 
              #ifdef VERBOSE
-             Serial.println("Valid Header Found");
+             Serial.println(F("Valid Header Found"));
              Serial.println("TYPE="+String(msg.type,HEX)+" SIZE="+String(msg.len,HEX)+" CRC="+String(msg.crc_rx.u32,HEX));
              #endif
          }
@@ -89,7 +88,7 @@ void receive(int countBytes){
 
     if(msg.valid_length){
       #ifdef VERBOSE
-      Serial.println("Valid Payload Length");
+      Serial.println(F("Valid Payload Length"));
       #endif
 
       for(uint8_t ct=0; ct<=msg.len; ct++){
@@ -98,10 +97,10 @@ void receive(int countBytes){
     }
     else{
       #ifdef VERBOSE
-      Serial.println("Incomplete message");
+      Serial.println(F("Incomplete message"));
       #endif
 
-      active.println("ERR Incomplete message");
+      active.println(F("ERR Incomplete message"));
       active.flush();
     }
 
@@ -112,14 +111,14 @@ void receive(int countBytes){
 
       if(msg.valid_crc){
         #ifdef VERBOSE
-        Serial.println("Valid Payload CRC");
+        Serial.println(F("Valid Payload CRC"));
         #endif
       }
       else{
         #ifdef VERBOSE
-        Serial.println("CRC mismatch");
+        Serial.println("CRC mismatch calc= "+String(msg.crc_calc,HEX));
         #endif
-        active.print("ERR CRC mismatch");
+        active.print(F("ERR CRC mismatch"));
         active.flush();
       }
     }
@@ -128,7 +127,6 @@ void receive(int countBytes){
   //Finally set the new message flag if the message has passed all the tests.
   msg.new_msg = msg.valid_sync && msg.valid_length && msg.valid_crc;
 }
-
 
 
 /*
@@ -146,30 +144,33 @@ void processRX(){
   //Only run if its a new message.
   if(msg.new_msg){
       #ifdef VERBOSE
-      Serial.println("Message processing");
+      Serial.println(F("Message processing"));
       #endif
 
       switch(msg.type){
       case 0x00: //Log data
         #ifdef VERBOSE
-        Serial.println(">> TYPE 0x00 LOG MESSAGE <<");
+        Serial.println(F(">> TYPE 0x00 LOG MESSAGE <<"));
         #endif
-        //active.println(String(msg.pld, HEX));
+        for(uint8_t ct; ct<=msg.len; ct++){
+          active.print(String(msg.pld[ct],HEX));
+        }
+        active.print("\n");
         active.flush();
         break;
       case 0x01: //Create new file (safely)
         #ifdef VERBOSE
-        Serial.println(">> TYPE 0x01 NEW FILE <<");
+        Serial.println(F(">> TYPE 0x01 NEW FILE <<"));
         #endif
         break;
       case 0x02: //Append to existing file
         #ifdef VERBOSE
-        Serial.println(">> TYPE 0x02 APPEND FILE <<");
+        Serial.println(F(">> TYPE 0x02 APPEND FILE <<"));
         #endif
         break;
       default:
         #ifdef VERBOSE
-        Serial.println(">> DEFAULT <<");
+        Serial.println(F(">> DEFAULT <<"));
         #endif
         break;
     }
