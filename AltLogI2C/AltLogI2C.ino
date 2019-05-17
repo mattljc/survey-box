@@ -4,22 +4,21 @@
  */
 
 #include <Wire.h>
-#include <CircularBuffer.h>
 #include <SPI.h>
-#include <SD.h>
-#include <CRC32.h>
+#include "SdFat.h"
+#include "CRC32.h"
 
 #define I2C_ADDR 0x42
 #define SPI_CS 10
 #define SPI_MISO
 #define SPI_MOSI
 
-//Initialize the circular buffer of chars for I2C data, and the CRC32 generator
+//Initialize I2C stuff, including CRC32 generator
 #define BUFFER_SIZE 32
-//CircularBuffer<uint8_t, BUFFER_SIZE> buffer;
 CRC32 crc;
 
-//Define File variable
+//Define SD variables
+SdFat SD;
 File active;
 
 //Define special flags.
@@ -55,16 +54,20 @@ void setup() {
     #endif
     while(true);
   }
+  
   //Open a default file, create that file if it does not exist.
-  Serial.println(FreeRam());
-  active = SD.open("default.txt",FILE_READ);
+  active = SD.open("log.txt", O_WRONLY | O_CREAT | O_APPEND);
   if(!active){
     #ifdef VERBOSE
     Serial.println(F("File open failed"));
+    //Serial.println(FreeRam());
     #endif
     while(true);
   }
   else{
+    #ifdef VERBOSE
+    Serial.println(F("File open. Awaiting data."));
+    #endif
     active.println(F("File open. Awaiting data."));
     active.flush();
   }
